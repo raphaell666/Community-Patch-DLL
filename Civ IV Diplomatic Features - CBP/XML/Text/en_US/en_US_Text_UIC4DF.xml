@@ -219,7 +219,7 @@
 			<Text>[NEWLINE][NEWLINE]Cannot capitulate because "Enable Human Vassalage" Game Option is not enabled.</Text>
 		</Row>
 		<Row Tag="TXT_KEY_DIPLO_DISCUSS_MESSAGE_END_VASSAL">
-			<Text>End vassalage with {1_PlayerName:textkey}.</Text>
+			<Text>Liberate {1_PlayerName:textkey}. (ENDS VASSALAGE)</Text>
 		</Row>
 		<Row Tag="TXT_KEY_DIPLO_DISCUSS_MESSAGE_END_VASSAL_TT">
 			<Text>Nullifies the Vassalage Agreement between you and {1_PlayerName:textkey}, granting them independence from your civilization. The leader will be grateful for this move, but you will no longer receive benefits from being this civilization's master.</Text>
@@ -725,7 +725,7 @@
 		
 		<!-- Vassal Benefits -->
 		<Row Tag="TXT_KEY_VO_VASSAL_BENEFITS">
-			<Text>Vassal Benefits</Text>
+			<Text>Master's Benefits</Text>
 		</Row>
 		<Row Tag="TXT_KEY_VO_BENEFITS_OPEN_BORDERS">
 			<Text>[ICON_BULLET] Open Borders</Text>
@@ -812,6 +812,11 @@
 		</Row>
 		<Row Tag="TXT_KEY_TP_GOLD_VASSAL_TAX">
 			<Text>{1_Num} from Vassal Taxes.</Text>
+		</Row>
+		
+		<!-- Diplomacy Liberate -->
+		<Row Tag="TXT_KEY_CONFIRM_LIBERATE">
+			<Text>Are you sure you want to liberate {1_TeamName}?</Text>
 		</Row>
 	</Language_en_US>
 </GameData>
