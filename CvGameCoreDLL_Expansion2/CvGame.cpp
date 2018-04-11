@@ -8317,9 +8317,9 @@ void CvGame::doTurn()
 
 	//autosave after doing a turn
 	if (isNetworkMultiPlayer())
-		gDLL->AutoSave(true, false); // initial
-		gDLL->AutoSave(false, false); // 
-		gDLL->AutoSave(false, true); // post
+		//gDLL->AutoSave(true, false); // initial
+		gDLL->AutoSave(false, false); // normal
+		//gDLL->AutoSave(false, true); // post
 		//gDLL->AutoSave(true, true); // R: first true seems to be prevalent, therefore (gDLL->AutoSave(true, true)) is the same as (gDLL->AutoSave(true, false))
 
 	gDLL->PublishNewGameTurn(getGameTurn());
