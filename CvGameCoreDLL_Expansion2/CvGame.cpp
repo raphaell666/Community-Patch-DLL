@@ -8080,7 +8080,7 @@ void CvGame::doTurn()
 
 	//create an autosave
 	if(!isNetworkMultiPlayer())
-		gDLL->AutoSave(false, false);
+		gDLL->AutoSave(false);
 
 	// END OF TURN
 
@@ -9367,21 +9367,17 @@ void CvGame::updateMoves()
 				CvPlayer& player = GET_PLAYER((PlayerTypes)iI);
 				if(!player.isTurnActive() && player.isHuman() && player.isAlive() && player.isSimultaneousTurns())
 				{
-					player.setTurnActive(true);
+					player.setTurnActive(true); // R: there seems to be some issue with this function particularly, the fix has to go after it
 #if defined(MOD_BUGFIX_SKIPPED_HUMAN_TURN_ON_MP_LOAD)
-					if (firstActivationOfPlayersAfterLoad && player.isLocalPlayer())
-					{
 						// DN: There is a strange issue with players missing their turns after loading a game, with the AI getting two turns in a row.
 						// It seems *to me* that Civ is incorrectly thinking telling us that the players have already indicated they have finished their turns
 						// A hacky solution to this is to tell Civ to cancel the player turn complete state.
 						// Otherwise they get their turn ended in the next call to updateMoves after the condition (!player.isEndTurn() && gDLL->HasReceivedTurnComplete(player.GetID()) && player.isHuman())
-						if (gDLL->HasReceivedTurnComplete(player.GetID()))
-						{
-							bool unreadied = gDLL->sendTurnUnready();
-							bool turnComplete = gDLL->HasReceivedTurnComplete(player.GetID());
-							NET_MESSAGE_DEBUG_OSTR_ALWAYS("UpdateMoves() : Attempting to fix skipped first turn issue - HasReceivedTurnComplete(" << player.GetID() << ") returned 1, sendTurnUnready() returned "
-								<< unreadied << " and now HasReceivedTurnComplete(" << player.GetID() << ") returned " << turnComplete);
-						}
+					// R: the function CancelActivePlayerEndTurn() does not help with this issue, because player.isEndTurn() == False, only gDLL->HasReceivedTurnComplete(player.GetID()) seems to catch this issue, was there a wrong gDLL->sendTurnComplete() somewhere?
+					if (firstActivationOfPlayersAfterLoad && player.isLocalPlayer() && gDLL->HasReceivedTurnComplete(player.GetID()))
+					{
+						if(gDLL->sendTurnUnready()) // R: only seems to work for local/active player, therefore players offline when loading will still lose a turn
+							player.setEndTurn(false); // R: setEndTurn and setTurnActive seem to do different things, but setEndTurn does not solve this problem alone
 					}
 #endif
 				}
