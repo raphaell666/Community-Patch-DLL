@@ -162,7 +162,6 @@ public:
 	bool IsCanPurchaseNavalUnitsFaith() const;
 	bool IsIgnorePuppetPenalties() const;
 	int GetSharedReligionTourismModifier() const;
-	int GetExtraMissionaryStrength() const;
 #endif
 #if defined(MOD_BALANCE_CORE_BUILDING_INVESTMENTS)
 	int GetInvestmentModifier() const;
@@ -492,7 +491,6 @@ protected:
 	bool m_bCanPurchaseNavalUnitsFaith;
 	bool m_bIgnorePuppetPenalties;
 	int m_iSharedReligionTourismModifier;
-	int m_iExtraMissionaryStrength;
 #endif
 #if defined(MOD_BALANCE_CORE_BUILDING_INVESTMENTS)
 	int m_iInvestmentModifier;
@@ -1175,10 +1173,6 @@ public:
 	int GetSharedReligionTourismModifier() const
 	{
 		return m_iSharedReligionTourismModifier;
-	};
-	int GetExtraMissionaryStrength() const
-	{
-		return m_iExtraMissionaryStrength;
 	};
 #endif
 #if defined(MOD_BALANCE_CORE_BUILDING_INVESTMENTS)
@@ -1908,7 +1902,6 @@ private:
 	bool m_bCanPurchaseNavalUnitsFaith;
 	bool m_bIgnorePuppetPenalties;
 	int m_iSharedReligionTourismModifier;
-	int m_iExtraMissionaryStrength;
 #endif
 #if defined(MOD_BALANCE_CORE_BUILDING_INVESTMENTS)
 	int m_iInvestmentModifier;
