@@ -33087,11 +33087,11 @@ void CvPlayer::setTurnActive(bool bNewValue, bool bDoTurn) // R: bDoTurn default
 		// R: the function CancelActivePlayerEndTurn() does not help with this issue, because player.isEndTurn() == False, only gDLL->HasReceivedTurnComplete(player.GetID()) seems to catch this issue, was there a wrong gDLL->sendTurnComplete() somewhere?
 		// in addition, this bug does not advance the turn count
 		// also, the players do not really miss their turns, what actually happens is that the AI plays twice in one turn
-		if(bNewValue)
-			if(kGame.isFirstActivationOfPlayersAfterLoad())
-				if(isHuman() && isAlive() && isSimultaneousTurns() && isLocalPlayer())
-					if(gDLL->HasReceivedTurnComplete(GetID()))
-						gDLL->sendTurnUnready();
+		//if(bNewValue)
+		//	if(kGame.isFirstActivationOfPlayersAfterLoad())
+		//		if(isHuman() && isAlive() && isSimultaneousTurns() && isLocalPlayer())
+		//			if(gDLL->HasReceivedTurnComplete(GetID()))
+		//				gDLL->sendTurnUnready();
 #endif
 		DLLUI->PublishEndTurnDirty();
 

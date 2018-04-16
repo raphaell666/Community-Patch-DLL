@@ -8191,10 +8191,30 @@ void CvGame::doTurn()
 		}
 	}
 
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+	if(!isFirstActivationOfPlayersAfterLoad())
+#endif
+	{
 	incrementGameTurn();
 	incrementElapsedGameTurns();
+	}
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+	else // R: if(isFirstActivationOfPlayersAfterLoad())
+	{
+		for(iI = 0; iI < MAX_PLAYERS; iI++)
+		{
+			CvPlayer& kPlayer = GET_PLAYER((PlayerTypes)iI);
+			if(kPlayer.isHuman() && kPlayer.isSimultaneousTurns() && kPlayer.isAlive())
+				kPlayer.setEndTurn(false);
+		}
+	}
+#endif
 
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+	if(!isFirstActivationOfPlayersAfterLoad() && isOption(GAMEOPTION_DYNAMIC_TURNS))
+#else
 	if(isOption(GAMEOPTION_DYNAMIC_TURNS))
+#endif
 	{// update turn mode for dynamic turn mode.
 		for(int teamIdx = 0; teamIdx < MAX_TEAMS; ++teamIdx)
 		{
@@ -8204,7 +8224,11 @@ void CvGame::doTurn()
 	}
 
 	// Configure turn active status for the beginning of the new turn.
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+	if(!isFirstActivationOfPlayersAfterLoad() && (isOption(GAMEOPTION_DYNAMIC_TURNS) || isOption(GAMEOPTION_SIMULTANEOUS_TURNS)))
+#else
 	if(isOption(GAMEOPTION_DYNAMIC_TURNS) || isOption(GAMEOPTION_SIMULTANEOUS_TURNS))
+#endif
 	{// In multi-player with simultaneous turns, we activate all of the AI players
 	 // at the same time.  The human players who are playing simultaneous turns will be activated in updateMoves after all
 	 // the AI players are processed.
@@ -8226,8 +8250,11 @@ void CvGame::doTurn()
 			}
 		}
 	}
-
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+	if(!isFirstActivationOfPlayersAfterLoad() && isSimultaneousTeamTurns())
+#else
 	if(isSimultaneousTeamTurns())
+#endif
 	{//We're doing simultaneous team turns, activate the first team in sequence.
 		for(iI = 0; iI < MAX_TEAMS; iI++)
 		{
@@ -8239,13 +8266,20 @@ void CvGame::doTurn()
 			}
 		}
 	}
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+	else if(isFirstActivationOfPlayersAfterLoad() || !isOption(GAMEOPTION_SIMULTANEOUS_TURNS))
+#else
 	else if(!isOption(GAMEOPTION_SIMULTANEOUS_TURNS))
+#endif
 	{// player sequential turns.
 		// Sequential turns.  Activate the first player we find from the start, human or AI, who wants a sequential turn.
 		for(iI = 0; iI < MAX_PLAYERS; iI++)
 		{
-			if(GET_PLAYER((PlayerTypes)iI).isAlive() 
-				&& !GET_PLAYER((PlayerTypes)iI).isSimultaneousTurns()) //we don't want to be a person who's doing a simultaneous turn for dynamic turn mode.
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+			if(GET_PLAYER((PlayerTypes)iI).isAlive() && (!GET_PLAYER((PlayerTypes)iI).isSimultaneousTurns() || isFirstActivationOfPlayersAfterLoad()))
+#else
+			if(GET_PLAYER((PlayerTypes)iI).isAlive() && !GET_PLAYER((PlayerTypes)iI).isSimultaneousTurns()) //we don't want to be a person who's doing a simultaneous turn for dynamic turn mode.
+#endif
 			{
 				if(isPbem() && GET_PLAYER((PlayerTypes)iI).isHuman())
 				{
@@ -9132,7 +9166,11 @@ void CvGame::updateMoves()
 
 			if(!processPlayerAutoMoves)
 			{
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+				if(!GC.getGame().isOption(GAMEOPTION_DYNAMIC_TURNS) && GC.getGame().isOption(GAMEOPTION_SIMULTANEOUS_TURNS) && !isFirstActivationOfPlayersAfterLoad())
+#else
 				if(!GC.getGame().isOption(GAMEOPTION_DYNAMIC_TURNS) && GC.getGame().isOption(GAMEOPTION_SIMULTANEOUS_TURNS))
+#endif
 				{//fully simultaneous turns.
 					// All humans must be ready for auto moves
 					bool readyForAutoMoves = true;
@@ -9377,7 +9415,11 @@ void CvGame::updateMoves()
 
 	if(activatePlayers)
 	{
+#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
+		if ((isOption(GAMEOPTION_DYNAMIC_TURNS) || isOption(GAMEOPTION_SIMULTANEOUS_TURNS)) && !isFirstActivationOfPlayersAfterLoad())
+#else
 		if (isOption(GAMEOPTION_DYNAMIC_TURNS) || isOption(GAMEOPTION_SIMULTANEOUS_TURNS))
+#endif
 		{//Activate human players who are playing simultaneous turns now that we've finished moves for the AI.
 			// KWG: This code should go into CheckPlayerTurnDeactivate
 			for(iI = 0; iI < MAX_PLAYERS; iI++)
