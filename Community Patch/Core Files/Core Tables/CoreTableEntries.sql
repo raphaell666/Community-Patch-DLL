@@ -232,8 +232,8 @@ ALTER TABLE Improvements ADD COLUMN 'UnitPlotExperience' INTEGER DEFAULT 0;
 -- Grants Free Experience when Unit is On Improvement plot during Golden Ages (must be owned) on Do Turn.
 ALTER TABLE Improvements ADD COLUMN 'GAUnitPlotExperience' INTEGER DEFAULT 0;
 
--- Activates the above two, UnitPlotExperience and GAUnitPlotExperience.
-ALTER TABLE Improvements ADD COLUMN 'IsExperience' BOOLEAN DEFAULT 0;
+-- Improvement grants extra moves when unit is on this plot
+ALTER TABLE Improvements ADD COLUMN 'MovesChange' INTEGER DEFAULT 0;
 
 -- Allows you to set a tech that makes an impassable terrain/feature element passable.
 ALTER TABLE Features ADD COLUMN 'PassableTechFeature' TEXT DEFAULT NULL;
@@ -884,6 +884,8 @@ ALTER TABLE Resources ADD COLUMN 'IsMonopoly' BOOLEAN DEFAULT 0;
 
 -- Cooldowns for Units/Buildings
 ALTER TABLE Units ADD COLUMN 'PurchaseCooldown' INTEGER DEFAULT 0;
+-- Affects only the city the unit is purchased from (works like PurchaseCooldown for faith purchases)
+ALTER TABLE Units ADD COLUMN 'LocalFaithPurchaseCooldown' INTEGER DEFAULT 0;
 -- Affects Faith purchases for all faith buys in all cities.
 ALTER TABLE Units ADD COLUMN 'GlobalFaithPurchaseCooldown' INTEGER DEFAULT 0;
 
@@ -941,6 +943,9 @@ ALTER TABLE Traits ADD COLUMN 'ProductionBonusModifierConquest' INTEGER DEFAULT 
 
 -- GWAM from conquest
 ALTER TABLE Traits ADD COLUMN 'CityConquestGWAM' INTEGER DEFAULT 0;
+
+-- Shared religion tourism modifier, same as the one for policies
+ALTER TABLE Traits ADD COLUMN 'SharedReligionTourismModifier' INTEGER DEFAULT 0;
 
 -- Limits the amount that can be built of a Unit class per city
 ALTER TABLE UnitClasses ADD COLUMN 'UnitInstancePerCity' INTEGER DEFAULT -1;
