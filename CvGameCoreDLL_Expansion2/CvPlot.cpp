@@ -150,9 +150,6 @@ FDataStream& operator<<(FDataStream& saveTo, const CvArchaeologyData& readFrom)
 CvPlot::CvPlot() :
 	m_syncArchive(*this)
 	, m_eFeatureType("CvPlot::m_eFeatureType", m_syncArchive, true)
-	, m_iUnitPlotExperience("CvPlot::m_iUnitPlotExperience", m_syncArchive)
-	, m_iUnitPlotGAExperience("CvPlot::m_iUnitPlotGAExperience", m_syncArchive)
-	, m_iPlotChangeMoves("CvPlot::m_iPlotChangeMoves", m_syncArchive)
 {
 	FSerialization::plotsToCheck.insert(m_iPlotIndex);
 	m_paiBuildProgress = NULL;
@@ -6223,6 +6220,18 @@ void CvPlot::setOwner(PlayerTypes eNewValue, int iAcquiringCityID, bool bCheckUn
 						int iPlotVisRange = pImprovementInfo->GetGrantsVision();
 						changeAdjacentSight(GET_PLAYER(GetPlayerThatBuiltImprovement()).getTeam(), iPlotVisRange, false, NO_INVISIBLE, NO_DIRECTION, false);
 					}
+					if (pImprovementInfo->GetUnitPlotExperience() > 0 && GetPlayerThatBuiltImprovement() != NO_PLAYER)
+					{
+						ChangeUnitPlotExperience(pImprovementInfo->GetUnitPlotExperience() * -1);
+					}
+					if (pImprovementInfo->GetGAUnitPlotExperience() > 0 && GetPlayerThatBuiltImprovement() != NO_PLAYER)
+					{
+						ChangeUnitPlotGAExperience(-1 * pImprovementInfo->GetGAUnitPlotExperience());
+					}
+					if (pImprovementInfo->GetMovesChange() > 0 && GetPlayerThatBuiltImprovement() != NO_PLAYER)
+					{
+						ChangePlotMovesChange(-1 * pImprovementInfo->GetMovesChange());
+					}
 #endif
 #if defined(MOD_DIPLOMACY_CITYSTATES)
 					// Embassy extra vote in WC mod
@@ -6464,6 +6473,18 @@ void CvPlot::setOwner(PlayerTypes eNewValue, int iAcquiringCityID, bool bCheckUn
 						int iPlotVisRange = pImprovementInfo->GetGrantsVision();
 						changeAdjacentSight(GET_PLAYER(GetPlayerThatBuiltImprovement()).getTeam(), iPlotVisRange, false, NO_INVISIBLE, NO_DIRECTION, false);
 						changeAdjacentSight(GET_PLAYER(getOwner()).getTeam(), iPlotVisRange, true, NO_INVISIBLE, NO_DIRECTION, false);
+					}
+					if (pImprovementInfo->GetUnitPlotExperience() > 0 && GetPlayerThatBuiltImprovement() != NO_PLAYER && getOwner() != GetPlayerThatBuiltImprovement())
+					{
+						ChangeUnitPlotExperience(pImprovementInfo->GetUnitPlotExperience());
+					}
+					if (pImprovementInfo->GetGAUnitPlotExperience() > 0 && GetPlayerThatBuiltImprovement() != NO_PLAYER && getOwner() != GetPlayerThatBuiltImprovement())
+					{
+						ChangeUnitPlotGAExperience(pImprovementInfo->GetGAUnitPlotExperience());
+					}
+					if (pImprovementInfo->GetMovesChange() > 0 && GetPlayerThatBuiltImprovement() != NO_PLAYER)
+					{
+						ChangePlotMovesChange(pImprovementInfo->GetMovesChange());
 					}
 #endif
 #if defined(MOD_BALANCE_CORE)
@@ -7794,15 +7815,15 @@ void CvPlot::setImprovementType(ImprovementTypes eNewValue, PlayerTypes eBuilder
 				}
 				if (oldImprovementEntry.GetUnitPlotExperience() > 0)
 				{
-					ChangeUnitPlotExperience(0);
+					ChangeUnitPlotExperience(-1 * oldImprovementEntry.GetUnitPlotExperience());
 				}
 				if (oldImprovementEntry.GetGAUnitPlotExperience() > 0)
 				{
-					ChangeUnitPlotGAExperience(0);
+					ChangeUnitPlotGAExperience(-1 * oldImprovementEntry.GetGAUnitPlotExperience());
 				}
 				if (oldImprovementEntry.GetMovesChange() > 0)
 				{
-					ChangePlotMovesChange(0);
+					ChangePlotMovesChange(-1 * oldImprovementEntry.GetMovesChange());
 				}
 #endif
 #if defined(MOD_BALANCE_CORE)
@@ -7925,7 +7946,7 @@ void CvPlot::setImprovementType(ImprovementTypes eNewValue, PlayerTypes eBuilder
 			{
 				if (getOwner() != NO_PLAYER && (getResourceType(GET_PLAYER(getOwner()).getTeam()) == eArtifactResourceType || getResourceType(GET_PLAYER(getOwner()).getTeam()) == eHiddenArtifactResourceType))
 				{
-					if (GetArchaeologicalRecord().m_eArtifactType != NO_GREAT_WORK_ARTIFACT_CLASS)
+					if (MOD_BALANCE_CORE_ARCHAEOLOGY_FROM_GP && GetArchaeologicalRecord().m_eArtifactType != NO_GREAT_WORK_ARTIFACT_CLASS)
 					{
 						CvPlayer& kPlayer = GET_PLAYER(getOwner());
 						kPlayer.SetNumArchaeologyChoices(kPlayer.GetNumArchaeologyChoices() + 1);
@@ -7986,6 +8007,11 @@ void CvPlot::setImprovementType(ImprovementTypes eNewValue, PlayerTypes eBuilder
 							ArchaeologyChoiceType eChoice = kPlayer.GetCulture()->GetArchaeologyChoice(this);
 							kPlayer.GetCulture()->DoArchaeologyChoice(eChoice);
 						}
+					}
+					else
+					{
+						setResourceType(NO_RESOURCE, 0);
+						ClearArchaeologicalRecord();
 					}
 				}
 				else if (getResourceType() == eArtifactResourceType || getResourceType() == eHiddenArtifactResourceType)
@@ -8700,7 +8726,7 @@ void CvPlot::SetImprovementPillaged(bool bPillaged)
 			int iMoves = GC.getImprovementInfo(getImprovementType())->GetMovesChange();
 			if (bPillaged && GetPlotMovesChange() > 0)
 			{
-				ChangePlotMovesChange(0);
+				ChangePlotMovesChange(iMoves * -1);
 			}
 			else if (!bPillaged && iMoves > 0 && getOwner() == GET_PLAYER(getOwner()).GetID())
 			{
@@ -10806,24 +10832,10 @@ int CvPlot::calculateYield(YieldTypes eYield, bool bDisplay)
 			if(pCity->HasGarrison())
 			{
 				CvUnit* pUnit = pCity->GetGarrisonedUnit();
-				if(pUnit != NULL)
+				if(pUnit != NULL && pUnit->GetGarrisonYieldChange(eYield) > 0)
 				{
-					for (int iI = 0; iI < GC.getNumPromotionInfos(); iI++)
-					{
-						const PromotionTypes eLoopPromotion = static_cast<PromotionTypes>(iI);
-						CvPromotionEntry* pkPromotionInfo = GC.getPromotionInfo(eLoopPromotion);
-						if(pkPromotionInfo)
-						{
-							if(pkPromotionInfo->GetGarrisonYield(eYield))
-							{
-								if(pUnit->isHasPromotion(eLoopPromotion))
-								{
-									int igarrisonstrength = pUnit->GetBaseCombatStrength();
-									iYield += ((pkPromotionInfo->GetGarrisonYield(eYield) * igarrisonstrength) / 8);
-								}
-							}
-						}
-					}
+					int igarrisonstrength = pUnit->GetBaseCombatStrength();
+					iYield += ((pUnit->GetGarrisonYieldChange(eYield) * igarrisonstrength) / 8);
 				}
 			}
 		}
@@ -12675,7 +12687,7 @@ int CvPlot::GetUnitPlotExperience() const
 void CvPlot::ChangeUnitPlotExperience(int iExperience)
 {
 	VALIDATE_OBJECT
-	m_iUnitPlotExperience = iExperience;
+	m_iUnitPlotExperience += iExperience;
 }
 int CvPlot::GetUnitPlotGAExperience() const
 {
@@ -12685,7 +12697,7 @@ int CvPlot::GetUnitPlotGAExperience() const
 void CvPlot::ChangeUnitPlotGAExperience(int iExperience)
 {
 	VALIDATE_OBJECT
-	m_iUnitPlotGAExperience = iExperience;
+	m_iUnitPlotGAExperience += iExperience;
 }
 bool CvPlot::IsUnitPlotExperience() const
 {
@@ -12703,7 +12715,7 @@ int CvPlot::GetPlotMovesChange() const
 void CvPlot::ChangePlotMovesChange(int iValue)
 {
 	VALIDATE_OBJECT
-	m_iPlotChangeMoves = iValue;
+	m_iPlotChangeMoves += iValue;
 }
 #endif
 //	--------------------------------------------------------------------------------
@@ -13103,6 +13115,12 @@ void CvPlot::read(FDataStream& kStream)
 	m_bIsImpassable = bitPackWorkaround;
 	kStream >> bitPackWorkaround;
 	m_bIsFreshwater = bitPackWorkaround;
+	kStream >> bitPackWorkaround;
+	m_iUnitPlotExperience = bitPackWorkaround;
+	kStream >> bitPackWorkaround;
+	m_iUnitPlotGAExperience = bitPackWorkaround;
+	kStream >> bitPackWorkaround;
+	m_iPlotChangeMoves = bitPackWorkaround;
 #endif
 
 	kStream >> m_eOwner;
@@ -13296,6 +13314,9 @@ void CvPlot::write(FDataStream& kStream) const
 #if defined(MOD_BALANCE_CORE)
 	kStream << m_bIsImpassable;
 	kStream << m_bIsFreshwater;
+	kStream << m_iUnitPlotExperience;
+	kStream << m_iUnitPlotGAExperience;
+	kStream << m_iPlotChangeMoves;
 #endif
 	// m_bPlotLayoutDirty not saved
 	// m_bLayoutStateWorked not saved
@@ -14325,7 +14346,7 @@ void CvPlot::SetStrategicRoute(TeamTypes eTeam, bool bValue)
 	if (m_abStrategicRoute[eTeam] != bValue)
 		m_abStrategicRoute[eTeam] = bValue;
 }
-bool CvPlot::IsStrategicRoute(TeamTypes eTeam)
+bool CvPlot::IsStrategicRoute(TeamTypes eTeam) const
 {
 	CvAssertMsg(eTeam >= 0, "eTeam is expected to be non-negative (invalid Index)");
 	CvAssertMsg(eTeam < REALLY_MAX_TEAMS, "eTeam is expected to be within maximum bounds (invalid Index)");

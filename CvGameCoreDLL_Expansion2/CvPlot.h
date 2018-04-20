@@ -845,7 +845,7 @@ public:
 	void SetBuilderAIScratchPadValue(short sNewValue);
 
 	void SetStrategicRoute(TeamTypes eTeam, bool bValue);
-	bool IsStrategicRoute(TeamTypes eTeam);
+	bool IsStrategicRoute(TeamTypes eTeam) const;
 
 	int GetPlotIndex() const;
 
@@ -1090,9 +1090,9 @@ protected:
 	FAutoArchiveClassContainer<CvPlot> m_syncArchive; // this must appear before the first auto variable in the class
 	FAutoVariable<char, CvPlot> /*FeatureTypes*/ m_eFeatureType;
 #if defined(MOD_BALANCE_CORE)
-	FAutoVariable<int, CvPlot> /*ImprovementTypes*/ m_iUnitPlotExperience;
-	FAutoVariable<int, CvPlot> /*ImprovementTypes*/ m_iUnitPlotGAExperience;
-	FAutoVariable<int, CvPlot> /*ImprovementTypes*/ m_iPlotChangeMoves;
+	char m_iUnitPlotExperience;
+	char m_iUnitPlotGAExperience;
+	char m_iPlotChangeMoves;
 #endif
 	char /*ResourceTypes*/ m_eResourceType;
 	char /*ImprovementTypes*/ m_eImprovementType;

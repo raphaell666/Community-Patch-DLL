@@ -946,6 +946,7 @@ protected:
 	void PopulateDigSite(CvPlot& kPlot, EraTypes eEra, GreatWorkArtifactClass eArtifact);
 	void SpawnArchaeologySitesHistorically();
 
+
 };
 
 #endif

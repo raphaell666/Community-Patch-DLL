@@ -338,6 +338,7 @@ CvUnit::CvUnit() :
 	, m_extraDomainModifiers()
 	, m_YieldModifier()
 	, m_YieldChange()
+	, m_iGarrisonYieldChange()
 	, m_strScriptData("CvUnit::m_szScriptData", m_syncArchive)
 	, m_iScenarioData("CvUnit::m_iScenarioData", m_syncArchive)
 	, m_terrainDoubleMoveCount("CvUnit::m_terrainDoubleMoveCount", m_syncArchive)
@@ -426,6 +427,7 @@ CvUnit::CvUnit() :
 	, m_iPillageBonusStrengthPercent("CvUnit::m_iPillageBonusStrengthPercent", m_syncArchive)
 	, m_iStackedGreatGeneralExperience("CvUnit::m_iStackedGreatGeneralExperience", m_syncArchive)
 	, m_bIsHighSeaRaider("CvUnit::m_bIsHighSeaRaider", m_syncArchive)
+	, m_iWonderProductionModifier("CvUnit::m_iWonderProductionModifier", m_syncArchive)
 #endif
 #if defined(MOD_PROMOTIONS_CROSS_MOUNTAINS)
 	, m_iCanCrossMountainsCount("CvUnit::m_iCanCrossMountainsCount", m_syncArchive)
@@ -1462,6 +1464,7 @@ void CvUnit::reset(int iID, UnitTypes eUnit, PlayerTypes eOwner, bool bConstruct
 	m_iPillageBonusStrengthPercent = 0;
 	m_iStackedGreatGeneralExperience = 0;
 	m_bIsHighSeaRaider = false;
+	m_iWonderProductionModifier = 0;
 #endif
 #if defined(MOD_PROMOTIONS_CROSS_MOUNTAINS)
 	m_iCanCrossMountainsCount = 0;
@@ -1607,10 +1610,12 @@ void CvUnit::reset(int iID, UnitTypes eUnit, PlayerTypes eOwner, bool bConstruct
 
 	m_YieldModifier.clear();
 	m_YieldChange.clear();
+	m_iGarrisonYieldChange.clear();
 	for (iI = 0; iI < NUM_YIELD_TYPES; iI++)
 	{
 		m_YieldModifier.push_back(0);
 		m_YieldChange.push_back(0);
+		m_iGarrisonYieldChange.push_back(0);
 	}
 
 #if defined(MOD_PROMOTIONS_UNIT_NAMING)
@@ -9811,6 +9816,7 @@ bool CvUnit::sellExoticGoods()
 					{
 						pBestPlot->setImprovementType(NO_IMPROVEMENT);
 						pBestPlot->setImprovementType(eFeitoria, getOwner());
+						pBestPlot->SilentlyResetAllBuildProgress();
 						
 						IDInfo* pUnitNode;
 						CvUnit* pLoopUnit;
@@ -11617,6 +11623,29 @@ bool CvUnit::canDiscover(const CvPlot* /*pPlot*/, bool bTestVisible) const
 	return true;
 }
 
+int CvUnit::GetScaleAmount(int iAmountToScale) const
+{
+	int iScaleTotal = 0;
+	for (int i = 0; i < GC.getNumImprovementInfos(); i++)
+	{
+		ImprovementTypes eImprovement = (ImprovementTypes)i;
+		if (eImprovement == NO_IMPROVEMENT)
+			continue;
+
+		int iScaleAmount = getUnitInfo().GetScalingFromOwnedImprovements(eImprovement);
+		if (iScaleAmount <= 0)
+			continue;
+
+		int iOwned = GET_PLAYER(getOwner()).CountAllImprovement(eImprovement, true);
+		iAmountToScale *= ((iOwned * iScaleAmount) + 100);
+		iAmountToScale /= 100;
+
+		iScaleTotal += iAmountToScale;
+	}
+
+	return iScaleTotal;
+}
+
 //	--------------------------------------------------------------------------------
 int CvUnit::getDiscoverAmount()
 {
@@ -11638,13 +11667,8 @@ int CvUnit::getDiscoverAmount()
 			//Let's make the GM a little more flexible.
 			if (MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES)
 			{
-				ImprovementTypes eAcademy = (ImprovementTypes)GC.getInfoTypeForString("IMPROVEMENT_ACADEMY");
-				if (eAcademy != NO_IMPROVEMENT)
-				{
-					int iAcademies = pPlayer->CountAllImprovement(eAcademy);
-					iValue *= ((iAcademies * 10) + 100);
-					iValue /= 100;
-				}
+				//scale up our value
+				iValue = GetScaleAmount(iValue);
 			}
 #endif
 
@@ -11841,13 +11865,8 @@ int CvUnit::getMaxHurryProduction(CvCity* pCity) const
 	//Let's make the GM a little more flexible.
 	if (MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES)
 	{
-		ImprovementTypes eManufactory = (ImprovementTypes)GC.getInfoTypeForString("IMPROVEMENT_MANUFACTORY");
-		if (eManufactory != NO_IMPROVEMENT)
-		{
-			int iManufactories = GET_PLAYER(getOwner()).CountAllImprovement(eManufactory);
-			iProduction *= ((iManufactories * 20) + 100);
-			iProduction /= 100;
-		}
+		//scale up our value
+		iProduction = GetScaleAmount(iProduction);
 	}
 #endif
 
@@ -12170,12 +12189,7 @@ bool CvUnit::trade()
 			//Let's make the GM a little more flexible.
 			if (MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES)
 			{
-				ImprovementTypes eTown = (ImprovementTypes)GC.getInfoTypeForString("IMPROVEMENT_CUSTOMS_HOUSE");
-				if (eTown != NO_IMPROVEMENT)
-				{
-					int iTowns = GET_PLAYER(getOwner()).CountAllImprovement(eTown);
-					iCap += iTowns;
-				}
+				iCap = GetScaleAmount(iCap);
 			}
 #endif
 			iCap *= GC.getGame().getGameSpeedInfo().getTrainPercent();
@@ -12900,7 +12914,7 @@ int CvUnit::GetGoldenAgeTurns() const
 
 #if defined(MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES)
 	//GA Mod
-	if (MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES)
+	if (MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES && getUnitInfo().GetScaleFromNumThemes() > 0)
 	{
 		int iTotalThemes = 0;
 		int iCityLoop;
@@ -12913,7 +12927,7 @@ int CvUnit::GetGoldenAgeTurns() const
 			}
 		}
 
-		iTotalThemes = (iTotalThemes * GC.getTHEME_GREAT_WORK_GA_MULTIPLIER());
+		iTotalThemes = (iTotalThemes * getUnitInfo().GetScaleFromNumThemes());
 		iGoldenAgeTurns *= (iTotalThemes + 100);
 		iGoldenAgeTurns /= 100;
 	}
@@ -12970,10 +12984,10 @@ int CvUnit::getGivePoliciesCulture()
 		}
 
 #if defined(MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES)
-		if (MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES)
+		if (MOD_BALANCE_CORE_NEW_GP_ATTRIBUTES && getUnitInfo().GetScaleFromNumGWs() > 0)
 		{
 			int iNumGreatWorks = kPlayer.GetCulture()->GetNumGreatWorks();
-			iNumGreatWorks = (iNumGreatWorks * GC.getGREAT_WORK_CULTURE_MULTIPLIER());
+			iNumGreatWorks = (iNumGreatWorks * getUnitInfo().GetScaleFromNumGWs());
 			iValue *= (iNumGreatWorks + 100);
 			iValue /= 100;
 		}
@@ -14999,7 +15013,7 @@ int CvUnit::maxMoves() const
 	}
 	else
 	{
-		return ((baseMoves() + plot()->GetPlotMovesChange()) * GC.getMOVE_DENOMINATOR());	// WARNING: Uses the current embark state of the unit!
+		return (plot()->getOwner() == getOwner() ? ((baseMoves() + plot()->GetPlotMovesChange()) * GC.getMOVE_DENOMINATOR()) : (baseMoves() * GC.getMOVE_DENOMINATOR()));	// WARNING: Uses the current embark state of the unit!
 	}
 }
 
@@ -18025,15 +18039,20 @@ int CvUnit::GetAddedFromNearbyUnitPromotion(PromotionTypes eIndex)
 	else
 		return 0;
 }
-void CvUnit::ChangeNearbyPromotion(bool bValue)
+void CvUnit::ChangeNearbyPromotion(int iValue)
 {
 	VALIDATE_OBJECT
-	m_bNearbyPromotion = bValue;
+	m_bNearbyPromotion += iValue;
+}
+int CvUnit::GetNearbyPromotion() const
+{
+	VALIDATE_OBJECT
+	return	m_bNearbyPromotion;
 }
 bool CvUnit::IsNearbyPromotion() const
 {
 	VALIDATE_OBJECT
-	return m_bNearbyPromotion;
+	return GetNearbyPromotion() > 0;
 }
 int CvUnit::GetNearbyUnitPromotionsRange() const
 {
@@ -18043,57 +18062,82 @@ int CvUnit::GetNearbyUnitPromotionsRange() const
 void CvUnit::ChangeNearbyUnitPromotionRange(int iBonusRange)
 {
 	VALIDATE_OBJECT
-	m_iNearbyUnitPromotionRange = iBonusRange;
+	m_iNearbyUnitPromotionRange += iBonusRange;
 }
-void CvUnit::ChangeNearbyCityPromotion(bool bValue)
+void CvUnit::ChangeNearbyCityPromotion(int iValue)
 {
 	VALIDATE_OBJECT
-	m_bNearbyCityPromotion = bValue;
+	m_bNearbyCityPromotion += iValue;
+}
+int CvUnit::GetNearbyCityPromotion() const
+{
+	VALIDATE_OBJECT
+	return	m_bNearbyCityPromotion;
 }
 bool CvUnit::IsNearbyCityPromotion() const
 {
 	VALIDATE_OBJECT
-	return m_bNearbyCityPromotion;
+	return GetNearbyCityPromotion() > 0;
 }
-void CvUnit::ChangeNearbyFriendlyCityPromotion(bool bValue)
+void CvUnit::ChangeNearbyFriendlyCityPromotion(int iValue)
 {
 	VALIDATE_OBJECT
-	m_bNearbyFriendlyCityPromotion = bValue;
+	m_bNearbyFriendlyCityPromotion += iValue;
+}
+int CvUnit::GetNearbyFriendlyCityPromotion() const
+{
+	VALIDATE_OBJECT
+	return	m_bNearbyFriendlyCityPromotion;
 }
 bool CvUnit::IsNearbyFriendlyCityPromotion() const
 {
 	VALIDATE_OBJECT
-	return m_bNearbyFriendlyCityPromotion;
+	return GetNearbyFriendlyCityPromotion() > 0;
 }
-void CvUnit::ChangeNearbyEnemyCityPromotion(bool bValue)
+void CvUnit::ChangeNearbyEnemyCityPromotion(int iValue)
 {
 	VALIDATE_OBJECT
-	m_bNearbyEnemyCityPromotion = bValue;
+	m_bNearbyEnemyCityPromotion += iValue;
+}
+int CvUnit::GetNearbyEnemyCityPromotion() const
+{
+	VALIDATE_OBJECT
+	return	m_bNearbyEnemyCityPromotion;
 }
 bool CvUnit::IsNearbyEnemyCityPromotion() const
 {
 	VALIDATE_OBJECT
-	return m_bNearbyEnemyCityPromotion;
+	return GetNearbyEnemyCityPromotion() > 0;
 }
-void CvUnit::ChangeIsFriendlyLands(bool bValue)
+void CvUnit::ChangeIsFriendlyLands(int iValue)
 {
 	VALIDATE_OBJECT
-	m_bIsFriendlyLands = bValue;
+	m_bIsFriendlyLands += iValue;
+}
+int CvUnit::GetIsFriendlyLands() const
+{
+	VALIDATE_OBJECT
+	return	m_bIsFriendlyLands;
 }
 bool CvUnit::IsFriendlyLands() const
 {
 	VALIDATE_OBJECT
-	return m_bIsFriendlyLands;
+	return GetIsFriendlyLands() > 0;
 }
-void CvUnit::ChangeIsEnemyLands(bool bValue)
+void CvUnit::ChangeIsEnemyLands(int iValue)
 {
 	VALIDATE_OBJECT
-	m_bIsEnemyLands = bValue;
+	m_bIsEnemyLands += iValue;
+}
+int CvUnit::GetIsEnemyLands() const
+{
+	VALIDATE_OBJECT
+	return	m_bIsEnemyLands;
 }
 bool CvUnit::IsEnemyLands() const
 {
 	VALIDATE_OBJECT
-	return m_bIsEnemyLands;
+	return GetIsEnemyLands() > 0;
 }
 void CvUnit::ChangeAdjacentSameType(PromotionTypes ePromotion, int iChange)
 {
@@ -18124,7 +18168,7 @@ int CvUnit::GetPillageBonusStrengthPercent() const
 void CvUnit::ChangePillageBonusStrengthPercent(int iBonus)
 {
 	VALIDATE_OBJECT
-	m_iPillageBonusStrengthPercent = iBonus;
+	m_iPillageBonusStrengthPercent += iBonus;
 }
 int CvUnit::GetStackedGreatGeneralExperience() const
 {
@@ -18134,17 +18178,32 @@ int CvUnit::GetStackedGreatGeneralExperience() const
 void CvUnit::ChangeStackedGreatGeneralExperience(int iExperience)
 {
 	VALIDATE_OBJECT
-	m_iStackedGreatGeneralExperience = iExperience;
+	m_iStackedGreatGeneralExperience += iExperience;
 }
-void CvUnit::ChangeIsHighSeaRaider(bool bValue)
+void CvUnit::ChangeIsHighSeaRaider(int iValue)
 {
 	VALIDATE_OBJECT
-	m_bIsHighSeaRaider = bValue;
+	m_bIsHighSeaRaider += iValue;
+}
+int CvUnit::GetIsHighSeaRaider() const
+{
+	VALIDATE_OBJECT
+	return	m_bIsHighSeaRaider;
 }
 bool CvUnit::IsHighSeaRaider() const
 {
 	VALIDATE_OBJECT
-	return m_bIsHighSeaRaider;
+	return GetIsHighSeaRaider() > 0;
+}
+int CvUnit::GetWonderProductionModifier() const
+{
+	VALIDATE_OBJECT
+	return m_iWonderProductionModifier;
+}
+void CvUnit::ChangeWonderProductionModifier(int iValue)
+{
+	VALIDATE_OBJECT
+	m_iWonderProductionModifier += iValue;
 }
 #endif
 #if defined(MOD_PROMOTIONS_CROSS_MOUNTAINS)
@@ -18253,13 +18312,13 @@ int CvUnit::GetNumTilesRevealedThisTurn()
 void CvUnit::SetSpottedEnemy(bool bValue)
 {
 	VALIDATE_OBJECT
-		m_bSpottedEnemy = bValue;
+	m_bSpottedEnemy = bValue;
 }
 //	--------------------------------------------------------------------------------
 bool CvUnit::IsSpottedEnemy()
 {
 	VALIDATE_OBJECT
-		return m_bSpottedEnemy;
+	return m_bSpottedEnemy;
 }
 
 //	--------------------------------------------------------------------------------
@@ -19251,6 +19310,23 @@ void CvUnit::SetYieldChange(YieldTypes eYield, int iValue)
 	CvAssertMsg(eYield < NUM_YIELD_TYPES, "eYield is expected to be within maximum bounds (invalid Index)");
 	m_YieldChange[eYield] = (m_YieldChange[eYield] + iValue);
 }
+// Similar to above code but is only for combat units and scales per the units combat strength : yield is placed on the plot itself
+int CvUnit::GetGarrisonYieldChange(YieldTypes eYield) const
+{
+	VALIDATE_OBJECT
+		CvAssertMsg(eYield >= 0, "eYield is expected to be non-negative (invalid Index)");
+	CvAssertMsg(eYield < NUM_YIELD_TYPES, "eYield is expected to be within maximum bounds (invalid Index)");
+	return m_iGarrisonYieldChange[eYield];
+}
+//	--------------------------------------------------------------------------------
+void CvUnit::SetGarrisonYieldChange(YieldTypes eYield, int iValue)
+{
+	VALIDATE_OBJECT
+		CvAssertMsg(eYield >= 0, "eYield is expected to be non-negative (invalid Index)");
+	CvAssertMsg(eYield < NUM_YIELD_TYPES, "eYield is expected to be within maximum bounds (invalid Index)");
+	m_iGarrisonYieldChange[eYield] = (m_iGarrisonYieldChange[eYield] + iValue);
+}
+
 //	--------------------------------------------------------------------------------
 #if defined(MOD_CARGO_SHIPS)
 SpecialUnitTypes CvUnit::specialUnitCargoLoad() const
@@ -23556,7 +23632,11 @@ void CvUnit::DoNearbyUnitPromotion(CvUnit* pUnit, const CvPlot* pPlot)
 										{
 											if (GET_PLAYER(pLoopUnit->getOwner()).getTeam() == GET_PLAYER(pUnit->getOwner()).getTeam())
 											{
-												if (::IsPromotionValidForUnitCombatType(eLoopPromotion, pLoopUnit->getUnitType()) && !pLoopUnit->isHasPromotion(pkPromotionInfo->AddedFromNearbyPromotion()))
+												if (pLoopUnit->IsNearbyPromotion() && pLoopUnit->isHasPromotion(eLoopPromotion))
+												{
+													pLoopUnit->setHasPromotion(eLoopPromotion, false);
+												}
+												if (::IsPromotionValidForUnitCombatType(eLoopPromotion, pLoopUnit->getUnitType()) && !pLoopUnit->IsNearbyPromotion())
 												{
 													pLoopUnit->setHasPromotion(eLoopPromotion, true);
 												}
@@ -26653,6 +26733,7 @@ void CvUnit::setHasPromotion(PromotionTypes eIndex, bool bNewValue)
 		ChangePillageBonusStrengthPercent(thisPromotion.GetPillageBonusStrengthPercent() * iChange);
 		ChangeStackedGreatGeneralExperience(thisPromotion.GetStackedGreatGeneralExperience() * iChange);
 		ChangeIsHighSeaRaider((thisPromotion.IsHighSeaRaider()) ? iChange : 0);
+		ChangeWonderProductionModifier(thisPromotion.GetWonderProductionModifier() * iChange);
 #endif
 #if defined(MOD_PROMOTIONS_CROSS_MOUNTAINS)
 		if (MOD_PROMOTIONS_CROSS_MOUNTAINS) {
@@ -26957,6 +27038,7 @@ void CvUnit::setHasPromotion(PromotionTypes eIndex, bool bNewValue)
 		for (iI = 0; iI < NUM_YIELD_TYPES; iI++)
 		{
 			SetYieldChange(((YieldTypes)iI), (thisPromotion.GetYieldChange(iI) * iChange));
+			SetGarrisonYieldChange(((YieldTypes)iI), (thisPromotion.GetGarrisonYield(iI) * iChange));
 		}
 
 		if(IsSelected())
@@ -27183,6 +27265,7 @@ void CvUnit::read(FDataStream& kStream)
 #if defined(MOD_UNITS_MAX_HP)
 	kStream >> m_YieldModifier;
 	kStream >> m_YieldChange;
+	kStream >> m_iGarrisonYieldChange;
 	MOD_SERIALIZE_READ(78, kStream, m_iMaxHitPointsBase, m_pUnitInfo->GetMaxHitPoints());
 #endif
 
@@ -27264,6 +27347,7 @@ void CvUnit::write(FDataStream& kStream) const
 	kStream << m_extraDomainModifiers;
 	kStream << m_YieldModifier;
 	kStream << m_YieldChange;
+	kStream << m_iGarrisonYieldChange;
 #if defined(MOD_UNITS_MAX_HP)
 	MOD_SERIALIZE_WRITE(kStream, m_iMaxHitPointsBase);
 #endif
