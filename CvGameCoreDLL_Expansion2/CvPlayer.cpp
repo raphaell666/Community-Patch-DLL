@@ -66,6 +66,7 @@
 #endif
 #include "CvGoodyHuts.h"
 
+#include "CvDllNetMessageExt.h"
 // Include this after all other headers.
 #define LINT_WARNINGS_ONLY
 #include "LintFree.h"
@@ -6391,8 +6392,12 @@ bool CvPlayer::IsEventChoiceValid(EventChoiceTypes eChosenEventChoice, EventType
 	}
 
 	//Exploit checks.
-	if(isEndTurn())
-		return false;
+	if (isEndTurn())
+	{
+		// Not sure what the exploits are in particular but global events are fired outside of human turns so we can't return here
+		if(!GC.getGame().isNetworkMultiPlayer()) // check simul/hybrid turns instead maybe? not sure yet.
+			return false;
+	}
 
 	if(!IsEventActive(eParentEvent))
 		return false;
@@ -8679,8 +8684,12 @@ void CvPlayer::DoEventSyncChoices(EventChoiceTypes eEventChoice, CvCity* pCity)
 		}
 	}
 }
-void CvPlayer::DoEventChoice(EventChoiceTypes eEventChoice, EventTypes eEvent)
+void CvPlayer::DoEventChoice(EventChoiceTypes eEventChoice, EventTypes eEvent, bool bSendMsg)
 {
+	if (GC.getGame().isNetworkMultiPlayer() && bSendMsg && isHuman()) {
+		NetMessageExt::Send::DoEventChoice(GetID(), eEventChoice, eEvent);
+		return;
+	}
 	if(eEventChoice != NO_EVENT_CHOICE)
 	{
 		CvModEventChoiceInfo* pkEventChoiceInfo = GC.getEventChoiceInfo(eEventChoice);
@@ -11074,13 +11083,7 @@ void CvPlayer::doTurn()
 	{
 		if(GC.getGame().isOption(GAMEOPTION_EVENTS))
 		{
-			//Don't do events in MP
-			bool bDontShowRewardPopup = (GC.getGame().isReallyNetworkMultiPlayer() || GC.getGame().isNetworkMultiPlayer());
-
-			if (!bDontShowRewardPopup)
-			{
-				DoEvents();
-			}
+			DoEvents();
 		}
 	}
 #endif
@@ -44610,7 +44613,7 @@ void CvPlayer::Read(FDataStream& kStream)
 			m_pDiplomacyRequests->Uninit();
 
 		m_pDiplomacyRequests->Init(GetID());
-		//m_pDiplomacyRequests->Read(kStream);
+		m_pDiplomacyRequests->Read(kStream);
 	}
 
 	if(m_bTurnActive)
@@ -44785,7 +44788,10 @@ void CvPlayer::Write(FDataStream& kStream) const
 	kStream << m_strEmbarkedGraphicOverride;
 
 	m_kPlayerAchievements.Write(kStream);
-
+	
+	if (GetID() < MAX_MAJOR_CIVS)
+		m_pDiplomacyRequests->Write(kStream);	
+	
 #if defined(MOD_API_UNIFIED_YIELDS) && defined(MOD_API_PLOT_YIELDS)
 	// MOD_SERIALIZE_READ - v57/v58/v59 broke the save format  couldn't be helped, but don't make a habit of it!!!
 	kStream << m_ppiPlotYieldChange;
