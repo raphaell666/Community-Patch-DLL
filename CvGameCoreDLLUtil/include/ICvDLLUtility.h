@@ -91,6 +91,7 @@ public:
 	virtual void sendAutoMoves() = 0;
 	virtual void sendTurnComplete() = 0;
 	virtual bool HasSentTurnComplete() = 0;
+	// DEPRECATED: Do not use directly, use CvGame::HasReceivedTurnComplete(PlayerTypes) instead to avoid issues with return result during the first turn after loading
 	virtual bool HasReceivedTurnComplete(PlayerTypes ePlayer) = 0;
 	virtual bool HasSentTurnAllComplete() = 0;
 	virtual bool HasReceivedTurnAllComplete(PlayerTypes ePlayer) = 0;

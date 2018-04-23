@@ -176,6 +176,28 @@ CvGame::~CvGame()
 	SAFE_DELETE_ARRAY(m_aiTeamScore);
 }
 
+
+bool CvGame::HasReceivedTurnComplete(PlayerTypes ePlayer)
+{
+	
+	bool complete = gDLL->HasReceivedTurnComplete(ePlayer);
+	// Only need to do this for simul/hybrid MP to prevent double AI turns	
+	if (isOption(GAMEOPTION_DYNAMIC_TURNS) || isOption(GAMEOPTION_SIMULTANEOUS_TURNS))
+	{
+		// Even though HasReceivedTurnComplete is returning true for the local player on the first turn after load, HasSentTurnComplete is not, so with their powers combined we can get the true answer	
+		if (complete && GET_PLAYER(ePlayer).isLocalPlayer())
+		{			
+			complete = gDLL->HasSentTurnComplete();
+		}
+		// maybe there is some magic we can do for pitboss here also, unfortunately I don't yet understand why it is failing as I can't realyl investigate the PitBoss problem.
+		// I don't understand why PitBoss has the issue if the issue here is successfully being resolved by fixing the local player only.
+		// Unless PitBoss for some reason considers all players local (probably not but it would explain it). Maybe this version somehow works.
+		// Or PitBoss has a different problem?
+	}
+	return complete;
+	
+}
+
 //	--------------------------------------------------------------------------------
 void CvGame::init(HandicapTypes eHandicap)
 {
@@ -1786,7 +1808,7 @@ void CvGame::CheckPlayerTurnDeactivate()
 
 						NET_MESSAGE_DEBUG_OSTR_ALWAYS("CheckPlayerTurnDeactivate() : auto-moves complete for " << kPlayer.getName());
 					}
-					else if(gDLL->HasReceivedTurnComplete(kPlayer.GetID()))
+					else if(GC.getGame().HasReceivedTurnComplete(kPlayer.GetID()))
 					{
 						bAutoMovesComplete = true;
 					}
@@ -2129,7 +2151,7 @@ bool CvGame::hasTurnTimerExpired(PlayerTypes playerID)
 					}
 				}
 
-				if((!curPlayer.isTurnActive() || gDLL->HasReceivedTurnComplete(playerID)) //Active player has finished their turn.
+				if((!curPlayer.isTurnActive() || GC.getGame().HasReceivedTurnComplete(playerID)) //Active player has finished their turn.
 					&& getNumSequentialHumans() > 1)	//or sequential turn mode
 				{//It's not our turn and there are sequential turn human players in the game.
 
@@ -9373,7 +9395,7 @@ void CvGame::updateMoves()
 				}
 
 				// KWG: This code should go into CheckPlayerTurnDeactivate
-				if(!player.isEndTurn() && gDLL->HasReceivedTurnComplete(player.GetID()) && player.isHuman() /* && (isNetworkMultiPlayer() || (!isNetworkMultiPlayer() && player.GetID() != getActivePlayer())) */)
+				if(!player.isEndTurn() && GC.getGame().HasReceivedTurnComplete(player.GetID()) && player.isHuman()/* && (isNetworkMultiPlayer() || (!isNetworkMultiPlayer() && player.GetID() != getActivePlayer())) */)
 				{
 					if(!player.hasBusyUnitOrCity())
 					{
