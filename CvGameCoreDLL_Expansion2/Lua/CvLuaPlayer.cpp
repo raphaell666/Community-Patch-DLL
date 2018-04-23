@@ -11682,7 +11682,7 @@ int CvLuaPlayer::lHasReceivedNetTurnComplete(lua_State* L)
 	CvPlayer* pkPlayer = GetInstance(L);
 	if(pkPlayer)
 	{
-		lua_pushboolean(L, gDLL->HasReceivedTurnComplete(pkPlayer->GetID()));
+		lua_pushboolean(L, GC.getGame().HasReceivedTurnComplete(pkPlayer->GetID()));		
 	}
 	return 1;
 }

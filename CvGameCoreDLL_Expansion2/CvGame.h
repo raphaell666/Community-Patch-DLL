@@ -56,7 +56,7 @@ class CvGame
 public:
 	CvGame();
 	~CvGame();
-
+	bool HasReceivedTurnComplete(PlayerTypes ePlayer);
 	void init(HandicapTypes eHandicap);
 	bool init2();
 

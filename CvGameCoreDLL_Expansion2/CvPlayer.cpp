@@ -33436,7 +33436,7 @@ void CvPlayer::setEndTurn(bool bNewValue)
 	// has units to run the simulation for the turn
 	if(!isEndTurn() && isHuman() && GetID() != game.getActivePlayer())
 	{
-		if(hasBusyUnitOrCity() || (!gDLL->HasReceivedTurnComplete(GetID()) && hasReadyUnit()))
+		if(hasBusyUnitOrCity() || (!GC.getGame().HasReceivedTurnComplete(GetID()) && hasReadyUnit()))
 		{
 			return;
 		}
