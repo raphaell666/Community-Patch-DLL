@@ -585,7 +585,16 @@ function RefreshPlayerList()
 	Controls.ListingScrollPanel:CalculateInternalSize();
 end
 
-
+function ShouldShowCivDetails(playerID)
+  -- do we want to have "unmet players" for players we haven't met yet in the actual game?  
+  if(not PreGame.GetGameOption("GAMEOPTION_KEEP_UNMET_PLAYERS_UNKNOWN")) then
+  	return true;
+  end
+  -- this nasty bit of code is actually asking if the local player has met this player. The IsCivilizationKeyAvailable was hijacked since I couldn't seem to be able to add new functions to query PreGame
+  -- The player is transformed as such to differentiate from the normal proper usage of the function - playerids in the range of [0,MAX_CIV_PLAYERS) and possible bad values of -1 (NO_PLAYER)
+  -- will just return true regardless if the game does not have the GAMEOPTION_KEEP_UNMET_PLAYERS_UNKNOWN set
+  return PreGame.IsCivilizationKeyAvailable( -(playerID+2) )
+end
 -------------------------------------------------
 -------------------------------------------------
 function UpdatePlayer( slotInstance, playerInfo )
@@ -595,9 +604,6 @@ function UpdatePlayer( slotInstance, playerInfo )
 	-- Player Listing Entry
 	if(slotInstance ~= nil) then
 		slotInstance.Root:SetHide( false );
-
-		local playerName = playerInfo.playerName or Locale.ConvertTextKey( "TXT_KEY_MULTIPLAYER_DEFAULT_PLAYER_NAME", playerID + 1);
-		local playerID   = playerInfo.playerID;
 
 		--------------------------------------------------------------
 		-- Handle Civ Info
@@ -793,6 +799,27 @@ function UpdatePlayer( slotInstance, playerInfo )
 			slotInstance.HandicapLabel:SetHide( false );
 			slotInstance.HandicapPulldown:SetHide( bCantChangeCiv );
 			slotInstance.PingTimeLabel:SetHide( false );
+		else
+			slotInstance.HandicapLabel:SetHide( true );
+			slotInstance.HandicapPulldown:SetHide( true );
+			slotInstance.PingTimeLabel:SetHide( true );
+		end
+
+        --slotInstance.DisableBlock:SetHide( not bIsDisabled );
+        
+		if( m_bIsHost ) then
+			if( bIsHotSeat ) then
+				slotInstance.KickButton:SetHide( true );
+				slotInstance.EditButton:SetHide( bIsDisabled or not bIsHuman );				
+				--slotInstance.EnableCheck:SetHide( false );
+				slotInstance.PingTimeLabel:SetHide( true );
+				slotInstance.LockCheck:SetHide( true );				
+			else
+				--slotInstance.EnableCheck:SetHide( bIsHuman or bCantChangeCiv );
+				slotInstance.LockCheck:SetHide( bIsHuman or bCantChangeCiv );
+				slotInstance.KickButton:SetHide( not bIsHuman and not Network.IsPlayerConnected(playerID));
+				slotInstance.EditButton:SetHide( true );
+			end
 		else
 			slotInstance.HandicapLabel:SetHide( true );
 			slotInstance.HandicapPulldown:SetHide( true );
@@ -1327,7 +1354,7 @@ Controls.OptionsPageTab:RegisterCallback( Mouse.eLClick, OnOptionsPageTab );
 -------------------------------------------------
 function ShowHideHandler( bIsHide, bIsInit )
 
-		--print("ShowHideHandler Hide: " .. tostring(bIsHide) .. " Init: " .. tostring(bIsInit));
+		print("ShowHideHandler Hide: " .. tostring(bIsHide) .. " Init: " .. tostring(bIsInit));
     if( bIsHide ) then
 			Controls.ChatStack:DestroyAllChildren();
     end

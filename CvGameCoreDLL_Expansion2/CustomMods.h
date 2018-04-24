@@ -44,6 +44,8 @@
 // Enables autosaving GameEvents and allows and extra autosave after Barbs/AI turn in
 #define MOD_SAVE_CONTROLLER	(true)
 
+// Enables not showing, during pregame, the details of the civs that have not been met by the local player, i.e. as it doesn't during the game
+#define MOD_KEEP_CIVS_UNKNOWN_PREGAME	(true)
 
 ///////////////////////
 // BATTLE ROYALE CODE
