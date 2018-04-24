@@ -14044,8 +14044,8 @@ int CvGame::GetContractUnits(ContractTypes eContract, UnitTypes eUnit) const
 	return m_ppaiContractUnits[eContract][eUnit];
 }
 #endif
-#if defined(MOD_BALANCE_CORE)
 
+#if defined(MOD_BALANCE_CORE_RESOURCE_MONOPOLIES)
 PlayerTypes CvGame::GetCorporationFounder(CorporationTypes eCorporation) const
 {
 	CvCorporation* pCorporation = m_pGameCorporations->GetCorporation(eCorporation);
@@ -14060,7 +14060,6 @@ int CvGame::GetNumCorporationsFounded() const
 	return m_pGameCorporations->GetNumActiveCorporations();
 }
 
-#if defined(MOD_BALANCE_CORE_RESOURCE_MONOPOLIES)
 void CvGame::UpdateGreatestPlayerResourceMonopoly(ResourceTypes eTestResource)
 {
 	for (int iResourceLoop = 0; iResourceLoop < GC.getNumResourceInfos(); iResourceLoop++)
@@ -14112,14 +14111,9 @@ int CvGame::GetGreatestPlayerResourceMonopolyValue(ResourceTypes eResource) cons
 
 	return GET_PLAYER(eGreatestPlayer).GetMonopolyPercent(eResource);
 }
-
-#if defined(MOD_SAVE_CONTROLLER)
-CvSaveController* CvGame::getSaveController()
-{
-	return m_pSaveController;
-}
 #endif
 
+#if defined(MOD_BALANCE_CORE)
 PlayerTypes CvGame::GetPotentialFreeCityPlayer(CvCity* pCity)
 {
 	if (pCity != NULL)
@@ -14295,6 +14289,7 @@ bool CvGame::CreateFreeCityPlayer(CvCity* pStartingCity, bool bJustChecking)
 	}
 	return true;
 }
+#endif
 
 #if defined(MOD_SAVE_CONTROLLER)
 CvSaveController* CvGame::getSaveController()
@@ -14303,8 +14298,6 @@ CvSaveController* CvGame::getSaveController()
 }
 #endif
 
-#endif
-#endif
 #if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
 bool CvGame::isFirstActivationOfPlayersAfterLoad()
 {
