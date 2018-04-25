@@ -1053,7 +1053,6 @@ void CvLuaPlayer::PushMethods(lua_State* L, int t)
 	Method(GetNumTurnsMilitaryPromise);
 	Method(GetNumTurnsExpansionPromise);
 	Method(GetNumTurnsBorderPromise);
-	Method(GetNumTurnsNoSpyingPromise);
 #endif
 
 	Method(GetNumNotifications);
@@ -10891,14 +10890,6 @@ int CvLuaPlayer::lGetNumTurnsBorderPromise(lua_State* L)
 	lua_pushinteger(L, iValue);
 	return 1;
 }
-int CvLuaPlayer::lGetNumTurnsNoSpyingPromise(lua_State* L)
-{
-	CvPlayerAI* pkPlayer = GetInstance(L);
-	PlayerTypes eWithPlayer = (PlayerTypes)lua_tointeger(L, 2);
-	int iValue = pkPlayer->GetDiplomacyAI()->GetPlayerMadeNoSpyingPromise(eWithPlayer);
-	lua_pushinteger(L, iValue);
-	return 1;
-}
 #endif
 //------------------------------------------------------------------------------
 //void AddNotification()
@@ -12552,14 +12543,6 @@ int CvLuaPlayer::lGetOpinionTable(lua_State* L)
 			kOpinion.m_str = GetLocalizedText("TXT_KEY_DIPLO_BORDER_PROMISE_TURNS", iValue);
 			aOpinions.push_back(kOpinion);
 		}
-		iValue = pDiploAI->GetPlayerMadeNoSpyingPromise(eWithPlayer);
-		if(iValue > 0)
-		{
-			Opinion kOpinion;
-			kOpinion.m_iValue = 0;
-			kOpinion.m_str = GetLocalizedText("TXT_KEY_DIPLO_NO_SPYING_PROMISE_TURNS", iValue);
-			aOpinions.push_back(kOpinion);
-		}
 
 		iValue = pDiploAI->GetDPAcceptedScore(eWithPlayer);
 		if (iValue != 0)
@@ -13557,7 +13540,7 @@ int CvLuaPlayer::lGetTotalValueToMeNormal(lua_State* L)
 	CvLeague* pLeague = GC.getGame().GetGameLeagues()->GetActiveLeague();
 	if (pLeague != NULL && pLeague->IsTradeEmbargoed(pkThisPlayer->GetID(), GC.getGame().getActivePlayer()))
 	{
-		iResult = -2;
+		iResult = -99999;
 		lua_pushinteger(L, iResult);
 		return 1;
 	}

@@ -14007,6 +14007,7 @@ int CvGame::GetGreatestPlayerResourceMonopolyValue(ResourceTypes eResource) cons
 
 	return GET_PLAYER(eGreatestPlayer).GetMonopolyPercent(eResource);
 }
+#endif
 
 PlayerTypes CvGame::GetPotentialFreeCityPlayer(CvCity* pCity)
 {
@@ -14183,5 +14184,4 @@ bool CvGame::CreateFreeCityPlayer(CvCity* pStartingCity, bool bJustChecking)
 	}
 	return true;
 }
-#endif
 #endif
