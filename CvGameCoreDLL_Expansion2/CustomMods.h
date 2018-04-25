@@ -972,7 +972,7 @@
 // Fixes the ExtraMissionarySpreads column to affect naturally born Prophets
 #define MOD_BUGFIX_EXTRA_MISSIONARY_SPREADS			gCustomMods.isBUGFIX_EXTRA_MISSIONARY_SPREADS()
 // Workaround for the AI double turn when loading MP games with simultaneous/hybrid turns
-#define MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD (true)
+// #define MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD (true)
 
 #endif // ACHIEVEMENT_HACKS
 
