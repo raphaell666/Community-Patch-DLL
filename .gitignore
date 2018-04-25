@@ -1,0 +1,47 @@
+#ignore everything except h, cpp, rc and vjproject files
+*
+!*/
+!*.h
+!*.cpp
+!*.hpp
+!*.rc
+!*.vcxproj
+!*.dds
+!*.fxsxml
+!*.ftsxml
+!*.ggxml
+!*.gr2
+!*.filters
+!*.gitattributes
+!*.xml
+!*.sql
+!*.lua
+!*.civ5mod
+!*.civ5proj
+!*.civ5sln
+!*.dll
+!*.sln
+!*.iss
+
+!*.py
+!*.inl
+!*.def
+!*.lib
+
+!*.txt
+!*.dds
+!*.gr2
+!*.mp3
+
+BuildOutput/
+BuildTemp/
+Mod/
+/Mod/CvGameCore_Expansion2.lib
+/Mod/CvGameCore_Expansion2.dll
+/Civilization IV Diplomatic Features - CBP/Build
+/Civilization IV Diplomatic Features - CP/Build
+/EUI Compatibility Files/Build
+/NoEUI Compatibility Files/Build
+Build/
+ISSUE_TEMPLATE
+Community Patch/Community Patch.civ5proj
