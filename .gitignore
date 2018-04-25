@@ -45,3 +45,5 @@ Mod/
 Build/
 ISSUE_TEMPLATE
 Community Patch/Community Patch.civ5proj
+*.civ5proj
+*.civ5mod
