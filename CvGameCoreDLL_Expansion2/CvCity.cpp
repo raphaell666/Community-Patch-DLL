@@ -20448,7 +20448,7 @@ int CvCity::getThresholdAdditions(YieldTypes eYield) const
 	int iModifier = GC.getBALANCE_UNHAPPY_CITY_BASE_VALUE();
 
 	//Let's modify this based on the number of player techs - more techs means the threshold goes higher.
-	int iTech = (int)(GET_TEAM(getTeam()).GetTeamTechs()->GetNumTechsKnown() * 100 * /*1.5*/ GC.getBALANCE_HAPPINESS_TECH_BASE_MODIFIER());
+	int iTech = (int)(GET_TEAM(getTeam()).GetTeamTechs()->GetNumTechsKnown() * GC.getNumTechInfos() * /*1.5*/ GC.getBALANCE_HAPPINESS_TECH_BASE_MODIFIER());
 	//Dividing it by the num of techs to get a % - num of techs artificially increased to slow rate of growth
 	iTech /= max(1, GC.getNumTechInfos());
 	

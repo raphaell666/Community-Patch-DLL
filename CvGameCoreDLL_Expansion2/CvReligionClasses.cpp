@@ -6592,7 +6592,7 @@ void CvCityReligions::CityConvertsReligion(ReligionTypes eMajority, ReligionType
 				CvPlayer& kCityOwnerPlayer = GET_PLAYER(m_pCity->getOwner());
 
 				// Did he found another religion?
-				ReligionTypes eCityOwnerReligion = kCityOwnerPlayer.GetReligions()->GetReligionCreatedByPlayer();
+				ReligionTypes eCityOwnerReligion = kCityOwnerPlayer.GetReligions()->GetCurrentReligion(true);
 				if(eCityOwnerReligion >= RELIGION_PANTHEON)
 				{
 					int iPoints = 0;

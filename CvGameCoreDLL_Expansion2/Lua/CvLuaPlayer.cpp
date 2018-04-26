@@ -13540,7 +13540,7 @@ int CvLuaPlayer::lGetTotalValueToMeNormal(lua_State* L)
 	CvLeague* pLeague = GC.getGame().GetGameLeagues()->GetActiveLeague();
 	if (pLeague != NULL && pLeague->IsTradeEmbargoed(pkThisPlayer->GetID(), GC.getGame().getActivePlayer()))
 	{
-		iResult = -2;
+		iResult = -99999;
 		lua_pushinteger(L, iResult);
 		return 1;
 	}

@@ -9450,7 +9450,7 @@ void CvTeam::Read(FDataStream& kStream)
 	kStream >> m_iNumMembers;
 
 #if defined(MOD_BALANCE_CORE)
-	for(int i=0; i<m_iNumMembers; i++)
+	for (int i = 0; i<std::min(m_iNumMembers, 1); i++)
 	{
 		int tmp;
 		kStream >> tmp;
