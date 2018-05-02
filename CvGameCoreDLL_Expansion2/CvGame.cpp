@@ -14304,9 +14304,3 @@ bool CvGame::isFirstActivationOfPlayersAfterLoad()
 	return m_firstActivationOfPlayersAfterLoad;
 }
 #endif
-#if defined(MOD_BUGFIX_AI_DOUBLE_TURN_MP_LOAD)
-bool CvGame::isFirstActivationOfPlayersAfterLoad()
-{
-	return m_firstActivationOfPlayersAfterLoad;
-}
-#endif
