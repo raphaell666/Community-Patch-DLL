@@ -1304,6 +1304,7 @@ enum BattleTypeTypes
 // AutoSave
 #define GAMEEVENT_WantAutoSave				"WantAutoSave",		"i"
 #define GAMEEVENT_AutoSaved					"AutoSaved",		"ib"
+#define GAMEEVENT_FreeCitySelector			"SetFreeCityType", "ii"
 
 // Serialization wrappers
 #define MOD_SERIALIZE

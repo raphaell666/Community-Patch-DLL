@@ -785,7 +785,9 @@ void CvGame::InitPlayers()
 				int testingMinor = GetAvailableMinorCivType() + (eMinorPlayer + (MAX_PREGAME_MAJOR_CIVS - MAX_MAJOR_CIVS));
 				CvMinorCivInfo* pMinorCivInfo = GC.getMinorCivInfo((MinorCivTypes)testingMinor);
 #else
-				CvMinorCivInfo* pMinorCivInfo = GC.getMinorCivInfo(GetAvailableMinorCivType());
+				MinorCivTypes eAvailableMinor = GetAvailableMinorCivType();
+				GAMEEVENTINVOKE_HOOK(GAMEEVENT_FreeCitySelector, eMinorPlayer, eAvailableMinor);
+				CvMinorCivInfo* pMinorCivInfo = GC.getMinorCivInfo(eAvailableMinor);
 #endif
 				if (pMinorCivInfo)
 				{
@@ -8854,7 +8856,7 @@ bool CvGame::DoSpawnUnitsAroundTargetCity(PlayerTypes ePlayer, CvCity* pCity, in
 			}
 			else
 			{
-				pstartUnit->setMoves(0);
+				pstartUnit->finishMoves();
 				if(ePlayer != BARBARIAN_PLAYER)
 				{
 					pCity->addProductionExperience(pstartUnit);
@@ -8881,7 +8883,7 @@ bool CvGame::DoSpawnUnitsAroundTargetCity(PlayerTypes ePlayer, CvCity* pCity, in
 					}
 					else
 					{
-						pmUnit->setMoves(0);
+						pmUnit->finishMoves();
 						if(ePlayer != BARBARIAN_PLAYER)
 						{
 							pCity->addProductionExperience(pmUnit);
@@ -8903,7 +8905,7 @@ bool CvGame::DoSpawnUnitsAroundTargetCity(PlayerTypes ePlayer, CvCity* pCity, in
 						}
 						else
 						{
-							pUnit->setMoves(0);
+							pUnit->finishMoves();
 							if(ePlayer != BARBARIAN_PLAYER)
 							{
 								pCity->addProductionExperience(pUnit);
@@ -9402,9 +9404,7 @@ void CvGame::updateMoves()
 							if(pLoopUnit)
 							{
 								bool bMoveMe  = false;
-								int iNumTurnsFortified = pLoopUnit->getFortifyTurns();
-								IDInfo* pUnitNodeInner;
-								pUnitNodeInner = pLoopUnit->plot()->headUnitNode();
+								IDInfo* pUnitNodeInner = pLoopUnit->plot()->headUnitNode();
 								while(pUnitNodeInner != NULL && !bMoveMe)
 								{
 									CvUnit* pLoopUnitInner = ::getUnit(*pUnitNodeInner);
@@ -9418,7 +9418,7 @@ void CvGame::updateMoves()
 											if(pLoopUnit->AreUnitsOfSameType(*pLoopUnitInner) && pLoopUnit->plot()->getMaxFriendlyUnitsOfType(pLoopUnit) > GC.getPLOT_UNIT_LIMIT())
 #endif
 											{
-												if(pLoopUnitInner->getFortifyTurns() >= iNumTurnsFortified)
+												if(pLoopUnitInner->IsFortified() && !pLoopUnit->IsFortified())
 												{
 													bMoveMe = true;
 												}
@@ -9737,6 +9737,13 @@ bool CvGame::testVictory(VictoryTypes eVictory, TeamTypes eTeam, bool* pbEndScor
 						if(kPlayer.GetPlayerPolicies()->GetLateGamePolicyTree() != NO_POLICY_BRANCH_TYPE)
 						{
 							if(kPlayer.GetCulture()->GetPublicOpinionType() > PUBLIC_OPINION_CONTENT)
+								continue;
+						}
+
+						ProjectTypes eUtopia = (ProjectTypes)GC.getInfoTypeForString("PROJECT_UTOPIA_PROJECT", true);
+						if (eUtopia != NO_PROJECT)
+						{
+							if (GET_TEAM(kPlayer.getTeam()).getProjectCount(eUtopia) <= 0)
 								continue;
 						}
 					}
