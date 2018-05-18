@@ -1012,7 +1012,7 @@ OperationSlot CvPlayerAI::PeekAtNextUnitToBuildForOperationSlot(CvCity* pCity, b
 			if (!pMusterPlot)
 				continue;
 
-			if (pCity == pMusterPlot->getWorkingCity())
+			if (pCity == pMusterPlot->getOwningCity())
 				bCitySameAsMuster = true;
 
 			if (pThisOperation->IsNavalOperation() && !pCity->isMatchingArea(pMusterPlot))
@@ -1441,6 +1441,13 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveEngineer(CvUnit* pGreatEnginee
 	int iFlavor =  GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_PRODUCTION"));
 	iFlavor += GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_GROWTH"));
 	iFlavor += (GetPlayerTraits()->GetWLTKDGPImprovementModifier() / 5);
+	for (int iYield = 0; iYield < NUM_YIELD_TYPES; iYield++)
+	{
+		YieldTypes eYield = (YieldTypes)iYield;
+		if (eYield == NULL)
+			continue;
+		iFlavor += GetPlayerTraits()->GetYieldChangePerImprovementBuilt(eManufactory, eYield);
+	}
 	iFlavor -= (GetCurrentEra() + GetNumUnitsWithUnitAI(UNITAI_ENGINEER));
 	// Build manufactories up to your flavor.
 	if(eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE)
@@ -1482,6 +1489,13 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveMerchant(CvUnit* pGreatMerchan
 		int iFlavor = GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_GOLD"));
 		iFlavor += GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_GROWTH"));
 		iFlavor += (GetPlayerTraits()->GetWLTKDGPImprovementModifier() / 5);
+		for (int iYield = 0; iYield < NUM_YIELD_TYPES; iYield++)
+		{
+			YieldTypes eYield = (YieldTypes)iYield;
+			if (eYield == NULL)
+				continue;
+			iFlavor += GetPlayerTraits()->GetYieldChangePerImprovementBuilt(eCustomHouse, eYield);
+		}
 		iFlavor -= (GetCurrentEra() + GetNumUnitsWithUnitAI(UNITAI_MERCHANT));
 
 		//don't count colonias here (IMPROVEMENT_CUSTOMS_HOUSE_VENICE), so venice will build any number of them once they run out of city states to buy
@@ -1509,6 +1523,13 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveScientist(CvUnit* /*pGreatScie
 		ImprovementTypes eAcademy = (ImprovementTypes)GC.getInfoTypeForString("IMPROVEMENT_ACADEMY");
 		int iFlavor = GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_SCIENCE"));
 		iFlavor += (GetPlayerTraits()->GetWLTKDGPImprovementModifier() / 5);
+		for (int iYield = 0; iYield < NUM_YIELD_TYPES; iYield++)
+		{
+			YieldTypes eYield = (YieldTypes)iYield;
+			if (eYield == NULL)
+				continue;
+			iFlavor += GetPlayerTraits()->GetYieldChangePerImprovementBuilt(eAcademy, eYield);
+		}
 		iFlavor += GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_GROWTH"));
 		//This is to prevent a buildup of scientists if the AI is having a hard time planting them.
 		iFlavor -= (GetCurrentEra() + GetNumUnitsWithUnitAI(UNITAI_SCIENTIST));
@@ -2695,7 +2716,7 @@ CvPlot* CvPlayerAI::FindBestCultureBombPlot(CvUnit* pUnit, BuildTypes eBuild, co
 			}
 
 			// not if we're about to give up the city
-			if (pAdjacentPlot->getWorkingCity() && pAdjacentPlot->getWorkingCity()->IsRazing())
+			if (pAdjacentPlot->getOwningCity() && pAdjacentPlot->getOwningCity()->IsRazing())
 				continue;
 
 			// can't build on some plots
