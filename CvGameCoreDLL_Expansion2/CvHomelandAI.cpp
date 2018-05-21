@@ -3880,22 +3880,15 @@ void CvHomelandAI::ExecuteHeals()
 	for(it = m_CurrentMoveUnits.begin(); it != m_CurrentMoveUnits.end(); ++it)
 	{
 		CvUnit* pUnit = m_pPlayer->getUnit(it->GetID());
-		if(pUnit)
-		{
-			if (pUnit->GetDanger()>0)
-			{
-				CvPlot* pBestPlot = TacticalAIHelpers::FindSafestPlotInReach(pUnit,true);
-				if (pBestPlot)
-				{
-					pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pBestPlot->getX(), pBestPlot->getY());
-					UnitProcessed(pUnit->GetID());
-					continue;
-				}
-			}
+		if (!pUnit)
+			continue;
 
+		CvPlot* pBestPlot = pUnit->GetDanger()>0 ? TacticalAIHelpers::FindSafestPlotInReach(pUnit,true) : TacticalAIHelpers::FindClosestSafePlotForHealing(pUnit);
+		if (pBestPlot!=pUnit->plot())
+			pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pBestPlot->getX(), pBestPlot->getY());
+		if (pUnit->canMove())
 			pUnit->PushMission(CvTypes::getMISSION_SKIP());
-			UnitProcessed(pUnit->GetID());
-		}
+		UnitProcessed(pUnit->GetID());
 	}
 }
 
@@ -4658,6 +4651,8 @@ void CvHomelandAI::ExecuteDiplomatMoves()
 void CvHomelandAI::ExecuteMessengerMoves()
 {
 	MoveUnitsArray::iterator it;
+	vector<int> vIgnoreCities;
+
 	for(it = m_CurrentMoveUnits.begin(); it != m_CurrentMoveUnits.end(); ++it)
 	{
 		CvUnit* pUnit = m_pPlayer->getUnit(it->GetID());
@@ -4667,7 +4662,7 @@ void CvHomelandAI::ExecuteMessengerMoves()
 		}
 		
 		//Do trade mission
-		CvPlot* pTarget = GET_PLAYER(m_pPlayer->GetID()).ChooseMessengerTargetPlot(pUnit);
+		CvPlot* pTarget = GET_PLAYER(m_pPlayer->GetID()).ChooseMessengerTargetPlot(pUnit,&vIgnoreCities);
 		if(pTarget)
 		{
 			if(((pUnit->plot() == pTarget) || (pUnit->plot()->getOwner() == pTarget->getOwner())) && pUnit->canMove() && pUnit->canTrade(pUnit->plot()))
@@ -6947,6 +6942,11 @@ void CvHomelandAI::ExecuteTradeUnitMoves()
 #if defined(MOD_TRADE_WONDER_RESOURCE_ROUTES)
 					case TRADE_CONNECTION_WONDER_RESOURCE:
 						strLogString.Format("Establishing wonder trade route from %s to %s", pOriginCity->getName().c_str(), pDestCity->getName().c_str());
+						break;
+#endif
+#if defined(MOD_BALANCE_CORE_GOLD_INTERNAL_TRADE_ROUTES)
+					case TRADE_CONNECTION_GOLD_INTERNAL:
+						strLogString.Format("Establishing gold trade route (internal) from %s to %s", pOriginCity->getName().c_str(), pDestCity->getName().c_str());
 						break;
 #endif
 					}
